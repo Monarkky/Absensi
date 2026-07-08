@@ -2,267 +2,401 @@
 <html>
 <head>
   <style>
-    body { font-family: sans-serif; padding: 20px; background-color: #f9f9f9; }
-    .nav-bar { margin-bottom: 20px; }
-    .nav-bar button { padding: 10px 15px; margin-right: 5px; cursor: pointer; font-weight: bold; }
-    .menu { display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    /* Premium Black / Dark Mode Theme */
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #121212; color: #e0e0e0; margin: 0; }
+    .nav-bar { display: none; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+    .nav-bar button { padding: 12px 20px; margin-right: 10px; cursor: pointer; font-weight: bold; background: #1e1e1e; color: #fff; border: 1px solid #444; border-radius: 4px; transition: 0.2s; }
+    .nav-bar button:hover { background: #333; }
+    .nav-bar button.active-tab { background: #008CBA; border-color: #008CBA; }
+    
+    #nav-admin.active-tab { background: #7b1fa2; border-color: #7b1fa2; }
+    
+    .menu { display: none; background: #1e1e1e; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border: 1px solid #2d2d2d; }
     .active { display: block; }
     
-    /* Virtual Numpad Styles */
-    .numpad { display: grid; grid-template-columns: repeat(3, 60px); gap: 10px; margin-top: 10px; }
-    .num-btn { padding: 15px; font-size: 20px; cursor: pointer; border-radius: 5px; background: #e0e0e0; border: none; }
-    .num-btn:active { background: #ccc; }
-    #pin-display { font-size: 24px; letter-spacing: 5px; margin-bottom: 10px; height: 30px; font-weight: bold; color: #333; }
+    input, select { padding: 10px; font-size: 14px; background-color: #2a2a2a; color: #fff; border: 1px solid #444; border-radius: 4px; box-sizing: border-box; }
+    input:focus, select:focus { border-color: #008CBA; outline: none; }
+    label { font-weight: bold; margin-right: 8px; color: #aaa; }
     
-    /* Table Styles */
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-    th { background-color: #4CAF50; color: white; }
-    tr:nth-child(even) { background-color: #f2f2f2; }
+    #login-screen { max-width: 400px; margin: 100px auto; background: #1e1e1e; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border: 1px solid #2d2d2d; text-align: center; }
+    .login-field { width: 100%; margin-bottom: 15px; display: block; }
+    .action-btn { padding: 10px 20px; background: #008CBA; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; width: 100%; font-size: 16px; }
+    .action-btn:hover { background: #007399; }
     
-    .filter-group { margin-bottom: 15px; display: flex; gap: 15px; align-items: center; }
-    input, select { padding: 8px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #1e1e1e; }
+    th, td { border: 1px solid #333; padding: 12px; text-align: left; }
+    th { background-color: #252525; color: #008CBA; font-weight: bold; }
+    tr:nth-child(even) { background-color: #161616; }
+    tr:hover { background-color: #2a2a2a; }
+    
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
+    .numpad-box { background: #222; border: 2px solid #444; padding: 25px; width: max-content; border-radius: 10px; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+    .numpad { display: grid; grid-template-columns: repeat(3, 70px); gap: 12px; margin-top: 15px; justify-content: center; }
+    .num-btn { padding: 18px; font-size: 22px; cursor: pointer; border-radius: 6px; background: #333; color: white; border: 1px solid #555; font-weight: bold; }
+    .num-btn:active { background: #555; }
+    #pin-display { font-size: 28px; letter-spacing: 8px; margin-bottom: 15px; height: 35px; font-weight: bold; color: #008CBA; }
+    
+    .filter-group { margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+    .download-btn { padding: 10px 15px; background: #4CAF50; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; }
+    .download-btn:hover { background: #45a049; }
+    
+    .admin-form-group { display: flex; flex-direction: column; gap: 15px; max-width: 350px; margin-top: 20px; }
   </style>
 </head>
 <body>
 
-  <div class="nav-bar">
-    <button onclick="showMenu('menu1')">Menu 1: Register Data</button>
-    <button onclick="showMenu('menu2')">Menu 2: Input Data</button>
-    <button onclick="showMenu('menu3')">Menu 3: See Data</button>
+  <div id="login-screen">
+    <h2 style="color: #008CBA; margin-bottom: 25px;">Attendance System Login</h2>
+    <input type="text" id="login-user" class="login-field" placeholder="Admin Username">
+    <input type="password" id="login-pass" class="login-field" placeholder="Admin Password">
+    <button onclick="executeLoginVerify()" class="action-btn" style="margin-top: 10px;">Login</button>
   </div>
 
-  <div id="menu1" class="menu">
-    <h2>Register New Employee Name</h2>
-    <p>Names registered here will instantly appear in Menu 2's dropdown selection.</p>
-    <input type="text" id="new-employee-name" placeholder="Enter Full Name">
-    <button onclick="submitNewRegistration()" style="padding: 8px 15px; background: #008CBA; color: white; border: none; cursor: pointer;">Register Name</button>
-  </div>
-
-  <div id="menu2" class="menu">
-    <h2>Input Attendance</h2>
-    <div class="filter-group">
-      <label>Select Name:</label>
-      <select id="employee-dropdown">
-        <option value="">-- Select Employee --</option>
-      </select>
-    </div>
-    
-    <div style="margin-top: 15px; margin-bottom: 15px;">
-      <button id="btn-in" onclick="setMode('Check In')" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; font-weight: bold;">Check In</button>
-      <button id="btn-out" onclick="setMode('Check Out')" style="padding: 10px 20px; background: #f44336; color: white; border: none; font-weight: bold;">Check Out</button>
+  <div id="app-shell" style="display: none;">
+    <div class="nav-bar" id="main-navigation">
+      <button id="nav-reg" onclick="showMenu('menu1', this)">Register Data</button>
+      <button id="nav-inp" onclick="showMenu('menu2', this)">Input Data</button>
+      <button id="nav-see" onclick="showMenu('menu3', this)">Show Data</button>
+      <button id="nav-admin" onclick="showMenu('menu4', this)" style="display: none; border-color: #7b1fa2; color: #e1bee7;">Create Admin ID</button>
     </div>
 
-    <div style="margin-top: 20px; border: 2px solid #ccc; padding: 15px; width: max-content; background: #fff; border-radius: 5px;">
-      <p style="margin: 0 0 10px 0; font-weight: bold;">Enter Admin PIN:</p>
-      <div id="pin-display"></div>
-      <div class="numpad">
-        <button class="num-btn" onclick="addPin('1')">1</button>
-        <button class="num-btn" onclick="addPin('2')">2</button>
-        <button class="num-btn" onclick="addPin('3')">3</button>
-        <button class="num-btn" onclick="addPin('4')">4</button>
-        <button class="num-btn" onclick="addPin('5')">5</button>
-        <button class="num-btn" onclick="addPin('6')">6</button>
-        <button class="num-btn" onclick="addPin('7')">7</button>
-        <button class="num-btn" onclick="addPin('8')">8</button>
-        <button class="num-btn" onclick="addPin('9')">9</button>
-        <button class="num-btn" onclick="clearPin()" style="background: #ff9800; color: white;">C</button>
-        <button class="num-btn" onclick="addPin('0')">0</button>
-        <button class="num-btn" onclick="submitAttendance()" style="background: #4CAF50; color: white; font-weight: bold;">GO</button>
-      </div>
+    <div id="menu1" class="menu">
+      <h2 style="color: #008CBA;">Register New Profile</h2>
+      <p style="color: #aaa; margin-bottom: 20px;">Adds names natively down to base spreadsheets to allow runtime processing.</p>
+      <input type="text" id="new-employee-name" placeholder="Enter Full Name" style="width: 300px; margin-right: 10px;">
+      <button onclick="submitNewRegistration()" style="padding: 11px 20px; background: #008CBA; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px;">Register Name</button>
     </div>
-  </div>
 
-  <div id="menu3" class="menu">
-    <h2>Attendance Records (Sri Lanka Time Zone)</h2>
-    
-    <div class="filter-group">
-      <div>
-        <label>Choose Month: </label>
-        <input type="month" id="month-selector" onchange="loadAndFilterData()">
-      </div>
-      <div>
-        <label>Filter by Group/Week: </label>
-        <select id="week-selector" onchange="loadAndFilterData()">
-          <option value="all">Show All Month Rows</option>
-          <option value="w1">Group 1 (Dates 1 - 7)</option>
-          <option value="w2">Group 2 (Dates 8 - 14)</option>
-          <option value="w3">Group 3 (Dates 15 - 21)</option>
-          <option value="w4">Group 4 (Dates 22 - 31)</option>
+    <div id="menu2" class="menu">
+      <h2 style="color: #008CBA;">Input Attendance</h2>
+      <div class="filter-group">
+        <label>Employee Profile:</label>
+        <select id="employee-dropdown" style="width: 250px;">
+          <option value="">-- Select Employee --</option>
         </select>
       </div>
-      <button onclick="downloadWholeMonth()" style="padding: 8px 15px; background: #2196F3; color: white; border: none; cursor: pointer; font-weight: bold; margin-left: auto;">Download Whole Month CSV</button>
+      
+      <div style="margin-top: 25px; display: flex; gap: 15px;">
+        <button onclick="launchNumpadVerification('Check In')" style="padding: 15px 30px; background: #4CAF50; color: white; border: none; font-weight: bold; font-size: 16px; cursor: pointer; border-radius: 4px; flex: 1;">Check In</button>
+        <button onclick="launchNumpadVerification('Check Out')" style="padding: 15px 30px; background: #f44336; color: white; border: none; font-weight: bold; font-size: 16px; cursor: pointer; border-radius: 4px; flex: 1;">Check Out</button>
+      </div>
     </div>
 
-    <div id="table-container">
-      <p style="color: gray;">Select a month above to load records.</p>
+    <div id="menu3" class="menu">
+      <h2 style="color: #008CBA;">Attendance Database Records (Sri Lanka Time)</h2>
+      
+      <div class="filter-group">
+        <div>
+          <label>Year:</label>
+          <select id="year-selector">
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+          </select>
+        </div>
+        <div>
+          <label>Month:</label>
+          <select id="month-selector">
+            <option value="01">January</option>
+            <option value="02">February</option>
+            <option value="03">March</option>
+            <option value="04">April</option>
+            <option value="05">May</option>
+            <option value="06">June</option>
+            <option value="07">July</option>
+            <option value="08">August</option>
+            <option value="09">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+        </div>
+        <div>
+          <label>Group/Week:</label>
+          <select id="week-selector">
+            <option value="all">Show All Month Rows</option>
+            <option value="w1">Group 1 (Dates 1 - 7)</option>
+            <option value="w2">Group 2 (Dates 8 - 14)</option>
+            <option value="w3">Group 3 (Dates 15 - 21)</option>
+            <option value="w4">Group 4 (Dates 22 - 31)</option>
+          </select>
+        </div>
+        
+        <button onclick="executeManualDataSearch()" style="padding: 10px 20px; background: #008CBA; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px;">Submit</button>
+        <button onclick="downloadWholeMonth()" class="download-btn" style="margin-left: auto;">Download Whole Month CSV</button>
+      </div>
+
+      <div id="table-container">
+        <p style="color: #888;">Configure parameter dropdown scopes above then hit submit to call runtime data arrays.</p>
+      </div>
+    </div>
+
+    <div id="menu4" class="menu">
+      <h2 style="color: #aa66cc;">Create System Access Admin ID</h2>
+      <p style="color: #aaa;">Privileged Authorization Required.</p>
+      
+      <div class="admin-form-group">
+        <div>
+          <label style="display:block; margin-bottom:5px;">New Username:</label>
+          <input type="text" id="new-admin-user" placeholder="Enter Username" style="width:100%;">
+        </div>
+        <div>
+          <label style="display:block; margin-bottom:5px;">Account Password:</label>
+          <input type="password" id="new-admin-pass" placeholder="Enter Password" style="width:100%;">
+        </div>
+        <div>
+          <label style="display:block; margin-bottom:5px;">Assigned Access Role Level:</label>
+          <select id="new-admin-role" style="width:100%;">
+            <option value="Admin">Standard System Admin</option>
+            <option value="Master">Master Authority ID</option>
+          </select>
+        </div>
+        <button onclick="submitNewAdminIdAccount()" style="padding: 12px; background: #aa66cc; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; margin-top: 10px; font-size:15px;">Provision Account ID</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="numpad-modal" class="modal-overlay">
+    <div class="numpad-box">
+      <p style="margin: 0 0 15px 0; font-weight: bold; color: #aaa; font-size: 16px;">Verify Security Admin PIN Code</p>
+      <div id="pin-display">------</div>
+      <div class="numpad">
+        <button class="num-btn" onclick="pressPad('1')">1</button>
+        <button class="num-btn" onclick="pressPad('2')">2</button>
+        <button class="num-btn" onclick="pressPad('3')">3</button>
+        <button class="num-btn" onclick="pressPad('4')">4</button>
+        <button class="num-btn" onclick="pressPad('5')">5</button>
+        <button class="num-btn" onclick="pressPad('6')">6</button>
+        <button class="num-btn" onclick="pressPad('7')">7</button>
+        <button class="num-btn" onclick="pressPad('8')">8</button>
+        <button class="num-btn" onclick="pressPad('9')">9</button>
+        <button class="num-btn" onclick="wipePad()" style="background: #ff9800; border-color: #ff9800;">C</button>
+        <button class="num-btn" onclick="pressPad('0')">0</button>
+        <button class="num-btn" onclick="dispatchAttendanceTransaction()" style="background: #4CAF50; border-color: #4CAF50;">GO</button>
+      </div>
+      <button onclick="dismissNumpadWindow()" style="margin-top: 20px; background: transparent; color: #888; border: none; cursor: pointer; text-decoration: underline;">Cancel Process</button>
     </div>
   </div>
 
   <script>
-    // ==========================================
-    // PLACE YOUR JSON DATABASE LINK RIGHT HERE:
-    // ==========================================
-    const JSON_LINK = "https://script.google.com/macros/s/AKfycbzN208UpQDgLpwJ9I_lYkBd9vBsSk7yrNYIjcXCUgCrozpIa9F75_poEr4tp4v-Rm1z/exec"; 
+    // 🔗 PASTE YOUR GOOGLE WEB APP URL LINK INSIDE THE QUOTES BELOW:
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwh0Ddta6RA7QlNDx55VkhBdZD3xQtid33kCcWcpIKliq5ughX0XYc0pNY-EmHGDd41/exec";
 
-    let currentPin = "";
-    let attendanceMode = "Check In";
-    let allAttendanceRows = []; 
+    let currentPinString = "";
+    let designatedMode = "Check In";
+    let storedSessionData = [];
+    let loggedInUser = "";
+    let loggedInRole = "";
 
-    // Initial page configurations
     window.onload = function() {
-      showMenu('menu2'); // Default view
-      fetchNamesIntoDropdown();
+      document.getElementById('login-screen').style.display = 'block';
     };
 
-    function showMenu(menuId) {
-      document.querySelectorAll('.menu').forEach(m => m.classList.remove('active'));
-      document.getElementById(menuId).classList.add('active');
-      if(menuId === 'menu3') {
-        // Automatically default to current month view when opening Menu 3
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        if(!document.getElementById('month-selector').value) {
-          document.getElementById('month-selector').value = `${year}-${month}`;
+    // Global central function to securely push requests outward to Google Sheets API
+    function callBackendAPI(actionName, payloadData, successCallback) {
+      fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: actionName, data: payloadData })
+      })
+      .then(res => res.json())
+      .then(jsonResponse => {
+        if(jsonResponse && jsonResponse.error) {
+          alert("Server Error Encountered: " + jsonResponse.error);
+        } else if (successCallback) {
+          successCallback(jsonResponse);
         }
-        loadAndFilterData();
-      }
+      })
+      .catch(err => alert("Network Connection Failure. Ensure Web App is Deployed as 'Anyone'."));
     }
 
-    // Menu 1 Execution
+    function executeLoginVerify() {
+      const user = document.getElementById('login-user').value.trim();
+      const pass = document.getElementById('login-pass').value.trim();
+      if(!user || !pass) return alert("All credentials fields are mandatory components.");
+
+      callBackendAPI("verifyLogin", { user: user, pass: pass }, authSession => {
+        if(authSession && authSession.isValid) {
+          loggedInUser = authSession.username;
+          loggedInRole = authSession.role;
+
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('app-shell').style.display = 'block';
+          document.getElementById('main-navigation').style.display = 'block';
+          
+          if(loggedInRole === "Master") {
+            document.getElementById('nav-admin').style.display = 'inline-block';
+          } else {
+            document.getElementById('nav-admin').style.display = 'none';
+          }
+
+          showMenu('menu2', document.getElementById('nav-inp'));
+          refreshLocalDropdownSync();
+        } else {
+          alert("Access Denied: Invalid credentials.");
+        }
+      });
+    }
+
+    function showMenu(menuId, element) {
+      document.querySelectorAll('.menu').forEach(m => m.classList.remove('active'));
+      document.querySelectorAll('.nav-bar button').forEach(b => b.classList.remove('active-tab'));
+      
+      document.getElementById(menuId).classList.add('active');
+      if(element) element.classList.add('active-tab');
+    }
+
+    function refreshLocalDropdownSync() {
+      callBackendAPI("getEmployees", {}, employeeArray => {
+        const dropdown = document.getElementById('employee-dropdown');
+        dropdown.innerHTML = '<option value="">-- Select Employee --</option>';
+        if(employeeArray && employeeArray.length) {
+          employeeArray.forEach(name => {
+            let opt = document.createElement('option');
+            opt.value = name; opt.innerText = name;
+            dropdown.appendChild(opt);
+          });
+        }
+      });
+    }
+
     function submitNewRegistration() {
-      const inputName = document.getElementById('new-employee-name').value.trim();
-      if (!inputName) return alert("Please type a name first.");
+      const targetInput = document.getElementById('new-employee-name');
+      const inputName = targetInput.value.trim();
+      if (!inputName) return alert("Provide an entry name string parameter first.");
       
-      // Sends data back to Google Sheet Code.gs
-      google.script.run.withSuccessHandler(res => {
-        alert("Successfully registered: " + inputName);
-        document.getElementById('new-employee-name').value = "";
-        fetchNamesIntoDropdown(); // Refresh dropdown lists immediately
-      }).registerEmployeeBackend(inputName); 
+      callBackendAPI("registerEmployee", { name: inputName }, res => {
+        alert("Registration Confirmation: " + inputName + " committed successfully.");
+        targetInput.value = "";
+        refreshLocalDropdownSync();
+      }); 
     }
 
-    // Pull database data via JSON link to feed Menu 2 Dropdown list
-    function fetchNamesIntoDropdown() {
-      if(JSON_LINK.includes("YOUR_DEPLOYED")) return; // Skip if default string is unaltered
+    function submitNewAdminIdAccount() {
+      const newUsername = document.getElementById('new-admin-user').value.trim();
+      const newPassword = document.getElementById('new-admin-pass').value.trim();
+      const newRole = document.getElementById('new-admin-role').value;
+
+      if(!newUsername || !newPassword) return alert("Username and Password entries cannot be left blank.");
+
+      callBackendAPI("registerAdmin", { activeUser: loggedInUser, newRes: newUsername, newPass: newPassword, newRole: newRole }, serverResultFeedback => {
+        alert(serverResultFeedback);
+        if(serverResultFeedback.indexOf("Success") === 0) {
+          document.getElementById('new-admin-user').value = "";
+          document.getElementById('new-admin-pass').value = "";
+        }
+      });
+    }
+
+    function launchNumpadVerification(mode) {
+      const activeSelection = document.getElementById('employee-dropdown').value;
+      if(!activeSelection) return alert("Select an active employee profile option from the list first.");
       
-      fetch(JSON_LINK)
-        .then(response => response.json())
-        .then(data => {
-          const dropdown = document.getElementById('employee-dropdown');
-          dropdown.innerHTML = '<option value="">-- Select Employee --</option>';
-          
-          // Extracts distinct employee identity profiles
-          if (data && data.employees) {
-            data.employees.forEach(name => {
-              let opt = document.createElement('option');
-              opt.value = name;
-              opt.innerText = name;
-              dropdown.appendChild(opt);
-            });
-          }
-        }).catch(err => console.log("Dropdown Sync failed, falling back to sheet calls direct."));
+      designatedMode = mode;
+      currentPinString = "";
+      renderPinMaskValues();
+      document.getElementById('numpad-modal').style.display = 'flex';
     }
 
-    // Numpad Functions
-    function addPin(num) { currentPin += num; updatePinDisplay(); }
-    function clearPin() { currentPin = ""; updatePinDisplay(); }
-    function updatePinDisplay() { document.getElementById('pin-display').innerText = '*'.repeat(currentPin.length); }
-    function setMode(mode) { attendanceMode = mode; alert("Mode changed to: " + mode); }
-
-    function submitAttendance() {
-      const name = document.getElementById('employee-dropdown').value;
-      if(!name) return alert("Please select an employee name first.");
-      if(!currentPin) return alert("Security Check: Master/Admin PIN code required.");
-
-      google.script.run.withSuccessHandler(res => {
-        alert(res);
-        clearPin();
-        if(document.getElementById('menu3').classList.contains('active')) loadAndFilterData();
-      }).recordAttendance(name, attendanceMode, currentPin);
+    function pressPad(digitValue) {
+      if(currentPinString.length >= 6) return; 
+      currentPinString += digitValue;
+      renderPinMaskValues();
     }
 
-    // Menu 3 Data Engine: Fetches your JSON Link and maps to groups 1-4
-    function loadAndFilterData() {
-      const targetMonth = document.getElementById('month-selector').value; // Format: YYYY-MM
-      if (!targetMonth) return;
+    function wipePad() {
+      currentPinString = "";
+      renderPinMaskValues();
+    }
 
-      const weekGroup = document.getElementById('week-selector').value;
-      const container = document.getElementById('table-container');
-      container.innerHTML = "<p>Fetching local logs...</p>";
+    function renderPinMaskValues() {
+      const totalLength = currentPinString.length;
+      let maskedOutput = "*".repeat(totalLength) + "-".repeat(6 - totalLength);
+      document.getElementById('pin-display').innerText = maskedOutput;
+    }
 
-      // Fetch the raw data array via JSON link
-      fetch(JSON_LINK)
-        .then(res => res.json())
-        .then(data => {
-          allAttendanceRows = data.attendance || data; // Map array architecture 
-          
-          // Step 1: Filter to target year/month only
-          let filtered = allAttendanceRows.filter(row => row.Date && row.Date.startsWith(targetMonth));
+    function dispatchAttendanceTransaction() {
+      const activeEmployee = document.getElementById('employee-dropdown').value;
+      if(currentPinString.length < 4) return alert("PIN must be between 4 and 6 digits.");
 
-          // Step 2: Extract day index number for the requested week groupings
-          filtered = filtered.filter(row => {
-            const dayNum = parseInt(row.Date.split("-")[2], 10);
-            if (weekGroup === 'w1') return dayNum >= 1 && dayNum <= 7;
-            if (weekGroup === 'w2') return dayNum >= 8 && dayNum <= 14;
-            if (weekGroup === 'w3') return dayNum >= 15 && dayNum <= 21;
-            if (weekGroup === 'w4') return dayNum >= 22 && dayNum <= 31;
-            return true; // "all"
-          });
+      callBackendAPI("recordAttendance", { name: activeEmployee, type: designatedMode, pin: currentPinString }, feedbackResponse => {
+        alert(feedbackResponse);
+        if(!feedbackResponse.toLowerCase().includes("invalid")) {
+          dismissNumpadWindow();
+          document.getElementById('employee-dropdown').value = ""; 
+        }
+      });
+    }
 
-          if(filtered.length === 0) {
-            container.innerHTML = "<p>No logged attendance found matching this week group constraint.</p>";
-            return;
-          }
+    function dismissNumpadWindow() {
+      document.getElementById('numpad-modal').style.display = 'none';
+    }
 
-          // Step 3: Build Screen Display Table
-          let html = `<table><tr><th>Name</th><th>Date</th><th>Time In</th><th>Time Out</th></tr>`;
-          filtered.forEach(row => {
-            html += `<tr>
-              <td>${row.Name || ''}</td>
-              <td>${row.Date || ''}</td>
-              <td>${row['Time In'] || ''}</td>
-              <td>${row['Time Out'] || ''}</td>
-            </tr>`;
-          });
-          html += `</table>`;
-          container.innerHTML = html;
-        }).catch(err => {
-          container.innerHTML = `<p style="color:red;">Error connecting to server database pipeline.</p>`;
+    function executeManualDataSearch() {
+      const yr = document.getElementById('year-selector').value;
+      const mo = document.getElementById('month-selector').value;
+      const combinedMonthFilter = `${yr}-${mo}`;
+      const groupFilter = document.getElementById('week-selector').value;
+      const layoutContainer = document.getElementById('table-container');
+
+      layoutContainer.innerHTML = "<p style='color:#008CBA;'>Querying internal storage structures securely...</p>";
+
+      callBackendAPI("getAttendance", {}, rows => {
+        storedSessionData = rows; 
+        
+        let subFiltered = rows.filter(r => r.Date && r.Date.startsWith(combinedMonthFilter));
+
+        subFiltered = subFiltered.filter(r => {
+          const extractedDayInteger = parseInt(r.Date.split("-")[2], 10);
+          if (groupFilter === 'w1') return extractedDayInteger >= 1 && extractedDayInteger <= 7;
+          if (groupFilter === 'w2') return extractedDayInteger >= 8 && extractedDayInteger <= 14;
+          if (groupFilter === 'w3') return extractedDayInteger >= 15 && extractedDayInteger <= 21;
+          if (groupFilter === 'w4') return extractedDayInteger >= 22 && extractedDayInteger <= 31;
+          return true;
         });
+
+        if(subFiltered.length === 0) {
+          layoutContainer.innerHTML = "<p style='color:#ff9800;'>No confirmed logs matches this criteria context scope.</p>";
+          return;
+        }
+
+        let tableTemplate = `<table><tr><th>Name</th><th>Date</th><th>Time In</th><th>Time Out</th></tr>`;
+        subFiltered.forEach(r => {
+          tableTemplate += `<tr>
+            <td>${r.Name || ''}</td>
+            <td>${r.Date || ''}</td>
+            <td>${r['Time In'] || ''}</td>
+            <td>${r['Time Out'] || ''}</td>
+          </tr>`;
+        });
+        tableTemplate += `</table>`;
+        layoutContainer.innerHTML = tableTemplate;
+      });
     }
 
-    // Specific Download Logic: Downloads the entire target month dataset 
     function downloadWholeMonth() {
-      const targetMonth = document.getElementById('month-selector').value;
-      if (!targetMonth) return alert("Select target month constraint to prepare packaging.");
+      const yr = document.getElementById('year-selector').value;
+      const mo = document.getElementById('month-selector').value;
+      const targetedMonthPrefix = `${yr}-${mo}`;
 
-      fetch(JSON_LINK)
-        .then(res => res.json())
-        .then(data => {
-          const rows = data.attendance || data;
-          // Filter out only rows from the chosen month, excluding the rest of the database
-          const monthData = rows.filter(row => row.Date && row.Date.startsWith(targetMonth));
+      if(!storedSessionData || storedSessionData.length === 0) {
+        return alert("Please run a successful 'Submit' query first to initialize the file packaging cache.");
+      }
 
-          if (monthData.length === 0) return alert("No database records matching selection found.");
+      const exactMonthRows = storedSessionData.filter(r => r.Date && r.Date.startsWith(targetedMonthPrefix));
+      if(exactMonthRows.length === 0) return alert("The selected timeframe contains an empty sheet row layout.");
 
-          // Assemble CSV Content
-          let csvString = "Name,Date,Time In,Time Out\n";
-          monthData.forEach(row => {
-            csvString += `"${row.Name}","${row.Date}","${row['Time In']}","${row['Time Out']}"\n`;
-          });
+      let textCsvPayload = "Name,Date,Time In,Time Out\n";
+      exactMonthRows.forEach(r => {
+        textCsvPayload += `"${r.Name || ''}","${r.Date || ''}","${r['Time In'] || ''}","${r['Time Out'] || ''}"\n`;
+      });
 
-          // Process direct delivery trigger payload down to machine storage
-          const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-          const url = URL.createObjectURL(blob);
-          const downloadAnchor = document.createElement("a");
-          downloadAnchor.setAttribute("href", url);
-          downloadAnchor.setAttribute("download", `Attendance_Report_${targetMonth}.csv`);
-          document.body.appendChild(downloadAnchor);
-          downloadAnchor.click();
-          document.body.removeChild(downloadAnchor);
-        });
+      const binaryBlob = new Blob([textCsvPayload], { type: 'text/csv;charset=utf-8;' });
+      const temporaryUrl = URL.createObjectURL(binaryBlob);
+      const matchingAnchor = document.createElement("a");
+      matchingAnchor.setAttribute("href", temporaryUrl);
+      matchingAnchor.setAttribute("download", `Attendance_Export_${targetedMonthPrefix}.csv`);
+      document.body.appendChild(matchingAnchor);
+      matchingAnchor.click();
+      document.body.removeChild(matchingAnchor);
     }
   </script>
 </body>
