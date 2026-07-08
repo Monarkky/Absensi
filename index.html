@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background-color: #f9f9f9; }
+    .nav-bar { margin-bottom: 20px; }
+    .nav-bar button { padding: 10px 15px; margin-right: 5px; cursor: pointer; font-weight: bold; }
+    .menu { display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .active { display: block; }
+    
+    /* Virtual Numpad Styles */
+    .numpad { display: grid; grid-template-columns: repeat(3, 60px); gap: 10px; margin-top: 10px; }
+    .num-btn { padding: 15px; font-size: 20px; cursor: pointer; border-radius: 5px; background: #e0e0e0; border: none; }
+    .num-btn:active { background: #ccc; }
+    #pin-display { font-size: 24px; letter-spacing: 5px; margin-bottom: 10px; height: 30px; font-weight: bold; color: #333; }
+    
+    /* Table Styles */
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+    th { background-color: #4CAF50; color: white; }
+    tr:nth-child(even) { background-color: #f2f2f2; }
+    
+    .filter-group { margin-bottom: 15px; display: flex; gap: 15px; align-items: center; }
+    input, select { padding: 8px; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <div class="nav-bar">
+    <button onclick="showMenu('menu1')">Menu 1: Register Data</button>
+    <button onclick="showMenu('menu2')">Menu 2: Input Data</button>
+    <button onclick="showMenu('menu3')">Menu 3: See Data</button>
+  </div>
+
+  <div id="menu1" class="menu">
+    <h2>Register New Employee Name</h2>
+    <p>Names registered here will instantly appear in Menu 2's dropdown selection.</p>
+    <input type="text" id="new-employee-name" placeholder="Enter Full Name">
+    <button onclick="submitNewRegistration()" style="padding: 8px 15px; background: #008CBA; color: white; border: none; cursor: pointer;">Register Name</button>
+  </div>
+
+  <div id="menu2" class="menu">
+    <h2>Input Attendance</h2>
+    <div class="filter-group">
+      <label>Select Name:</label>
+      <select id="employee-dropdown">
+        <option value="">-- Select Employee --</option>
+      </select>
+    </div>
+    
+    <div style="margin-top: 15px; margin-bottom: 15px;">
+      <button id="btn-in" onclick="setMode('Check In')" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; font-weight: bold;">Check In</button>
+      <button id="btn-out" onclick="setMode('Check Out')" style="padding: 10px 20px; background: #f44336; color: white; border: none; font-weight: bold;">Check Out</button>
+    </div>
+
+    <div style="margin-top: 20px; border: 2px solid #ccc; padding: 15px; width: max-content; background: #fff; border-radius: 5px;">
+      <p style="margin: 0 0 10px 0; font-weight: bold;">Enter Admin PIN:</p>
+      <div id="pin-display"></div>
+      <div class="numpad">
+        <button class="num-btn" onclick="addPin('1')">1</button>
+        <button class="num-btn" onclick="addPin('2')">2</button>
+        <button class="num-btn" onclick="addPin('3')">3</button>
+        <button class="num-btn" onclick="addPin('4')">4</button>
+        <button class="num-btn" onclick="addPin('5')">5</button>
+        <button class="num-btn" onclick="addPin('6')">6</button>
+        <button class="num-btn" onclick="addPin('7')">7</button>
+        <button class="num-btn" onclick="addPin('8')">8</button>
+        <button class="num-btn" onclick="addPin('9')">9</button>
+        <button class="num-btn" onclick="clearPin()" style="background: #ff9800; color: white;">C</button>
+        <button class="num-btn" onclick="addPin('0')">0</button>
+        <button class="num-btn" onclick="submitAttendance()" style="background: #4CAF50; color: white; font-weight: bold;">GO</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="menu3" class="menu">
+    <h2>Attendance Records (Sri Lanka Time Zone)</h2>
+    
+    <div class="filter-group">
+      <div>
+        <label>Choose Month: </label>
+        <input type="month" id="month-selector" onchange="loadAndFilterData()">
+      </div>
+      <div>
+        <label>Filter by Group/Week: </label>
+        <select id="week-selector" onchange="loadAndFilterData()">
+          <option value="all">Show All Month Rows</option>
+          <option value="w1">Group 1 (Dates 1 - 7)</option>
+          <option value="w2">Group 2 (Dates 8 - 14)</option>
+          <option value="w3">Group 3 (Dates 15 - 21)</option>
+          <option value="w4">Group 4 (Dates 22 - 31)</option>
+        </select>
+      </div>
+      <button onclick="downloadWholeMonth()" style="padding: 8px 15px; background: #2196F3; color: white; border: none; cursor: pointer; font-weight: bold; margin-left: auto;">Download Whole Month CSV</button>
+    </div>
+
+    <div id="table-container">
+      <p style="color: gray;">Select a month above to load records.</p>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // PLACE YOUR JSON DATABASE LINK RIGHT HERE:
+    // ==========================================
+    const JSON_LINK = "https://script.google.com/macros/s/AKfycbzN208UpQDgLpwJ9I_lYkBd9vBsSk7yrNYIjcXCUgCrozpIa9F75_poEr4tp4v-Rm1z/exec"; 
+
+    let currentPin = "";
+    let attendanceMode = "Check In";
+    let allAttendanceRows = []; 
+
+    // Initial page configurations
+    window.onload = function() {
+      showMenu('menu2'); // Default view
+      fetchNamesIntoDropdown();
+    };
+
+    function showMenu(menuId) {
+      document.querySelectorAll('.menu').forEach(m => m.classList.remove('active'));
+      document.getElementById(menuId).classList.add('active');
+      if(menuId === 'menu3') {
+        // Automatically default to current month view when opening Menu 3
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        if(!document.getElementById('month-selector').value) {
+          document.getElementById('month-selector').value = `${year}-${month}`;
+        }
+        loadAndFilterData();
+      }
+    }
+
+    // Menu 1 Execution
+    function submitNewRegistration() {
+      const inputName = document.getElementById('new-employee-name').value.trim();
+      if (!inputName) return alert("Please type a name first.");
+      
+      // Sends data back to Google Sheet Code.gs
+      google.script.run.withSuccessHandler(res => {
+        alert("Successfully registered: " + inputName);
+        document.getElementById('new-employee-name').value = "";
+        fetchNamesIntoDropdown(); // Refresh dropdown lists immediately
+      }).registerEmployeeBackend(inputName); 
+    }
+
+    // Pull database data via JSON link to feed Menu 2 Dropdown list
+    function fetchNamesIntoDropdown() {
+      if(JSON_LINK.includes("YOUR_DEPLOYED")) return; // Skip if default string is unaltered
+      
+      fetch(JSON_LINK)
+        .then(response => response.json())
+        .then(data => {
+          const dropdown = document.getElementById('employee-dropdown');
+          dropdown.innerHTML = '<option value="">-- Select Employee --</option>';
+          
+          // Extracts distinct employee identity profiles
+          if (data && data.employees) {
+            data.employees.forEach(name => {
+              let opt = document.createElement('option');
+              opt.value = name;
+              opt.innerText = name;
+              dropdown.appendChild(opt);
+            });
+          }
+        }).catch(err => console.log("Dropdown Sync failed, falling back to sheet calls direct."));
+    }
+
+    // Numpad Functions
+    function addPin(num) { currentPin += num; updatePinDisplay(); }
+    function clearPin() { currentPin = ""; updatePinDisplay(); }
+    function updatePinDisplay() { document.getElementById('pin-display').innerText = '*'.repeat(currentPin.length); }
+    function setMode(mode) { attendanceMode = mode; alert("Mode changed to: " + mode); }
+
+    function submitAttendance() {
+      const name = document.getElementById('employee-dropdown').value;
+      if(!name) return alert("Please select an employee name first.");
+      if(!currentPin) return alert("Security Check: Master/Admin PIN code required.");
+
+      google.script.run.withSuccessHandler(res => {
+        alert(res);
+        clearPin();
+        if(document.getElementById('menu3').classList.contains('active')) loadAndFilterData();
+      }).recordAttendance(name, attendanceMode, currentPin);
+    }
+
+    // Menu 3 Data Engine: Fetches your JSON Link and maps to groups 1-4
+    function loadAndFilterData() {
+      const targetMonth = document.getElementById('month-selector').value; // Format: YYYY-MM
+      if (!targetMonth) return;
+
+      const weekGroup = document.getElementById('week-selector').value;
+      const container = document.getElementById('table-container');
+      container.innerHTML = "<p>Fetching local logs...</p>";
+
+      // Fetch the raw data array via JSON link
+      fetch(JSON_LINK)
+        .then(res => res.json())
+        .then(data => {
+          allAttendanceRows = data.attendance || data; // Map array architecture 
+          
+          // Step 1: Filter to target year/month only
+          let filtered = allAttendanceRows.filter(row => row.Date && row.Date.startsWith(targetMonth));
+
+          // Step 2: Extract day index number for the requested week groupings
+          filtered = filtered.filter(row => {
+            const dayNum = parseInt(row.Date.split("-")[2], 10);
+            if (weekGroup === 'w1') return dayNum >= 1 && dayNum <= 7;
+            if (weekGroup === 'w2') return dayNum >= 8 && dayNum <= 14;
+            if (weekGroup === 'w3') return dayNum >= 15 && dayNum <= 21;
+            if (weekGroup === 'w4') return dayNum >= 22 && dayNum <= 31;
+            return true; // "all"
+          });
+
+          if(filtered.length === 0) {
+            container.innerHTML = "<p>No logged attendance found matching this week group constraint.</p>";
+            return;
+          }
+
+          // Step 3: Build Screen Display Table
+          let html = `<table><tr><th>Name</th><th>Date</th><th>Time In</th><th>Time Out</th></tr>`;
+          filtered.forEach(row => {
+            html += `<tr>
+              <td>${row.Name || ''}</td>
+              <td>${row.Date || ''}</td>
+              <td>${row['Time In'] || ''}</td>
+              <td>${row['Time Out'] || ''}</td>
+            </tr>`;
+          });
+          html += `</table>`;
+          container.innerHTML = html;
+        }).catch(err => {
+          container.innerHTML = `<p style="color:red;">Error connecting to server database pipeline.</p>`;
+        });
+    }
+
+    // Specific Download Logic: Downloads the entire target month dataset 
+    function downloadWholeMonth() {
+      const targetMonth = document.getElementById('month-selector').value;
+      if (!targetMonth) return alert("Select target month constraint to prepare packaging.");
+
+      fetch(JSON_LINK)
+        .then(res => res.json())
+        .then(data => {
+          const rows = data.attendance || data;
+          // Filter out only rows from the chosen month, excluding the rest of the database
+          const monthData = rows.filter(row => row.Date && row.Date.startsWith(targetMonth));
+
+          if (monthData.length === 0) return alert("No database records matching selection found.");
+
+          // Assemble CSV Content
+          let csvString = "Name,Date,Time In,Time Out\n";
+          monthData.forEach(row => {
+            csvString += `"${row.Name}","${row.Date}","${row['Time In']}","${row['Time Out']}"\n`;
+          });
+
+          // Process direct delivery trigger payload down to machine storage
+          const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const downloadAnchor = document.createElement("a");
+          downloadAnchor.setAttribute("href", url);
+          downloadAnchor.setAttribute("download", `Attendance_Report_${targetMonth}.csv`);
+          document.body.appendChild(downloadAnchor);
+          downloadAnchor.click();
+          document.body.removeChild(downloadAnchor);
+        });
+    }
+  </script>
+</body>
+</html>
