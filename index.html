@@ -462,9 +462,42 @@
       });
     }
 
+    // Helper function to get today's exact date in Sri Lanka timezone matching database format
+    function getSriLankaDateString() {
+      const options = { timeZone: "Asia/Colombo", year: "numeric", month: "2-digit", day: "2-digit" };
+      return new Intl.DateTimeFormat("en-CA", options).format(new Date());
+    }
+
     function launchNumpadVerification(mode) {
-      if(!document.getElementById('employee-dropdown').value) return alert("Select an active employee profile option from the list first.");
-      designatedMode = mode; currentPinString = ""; renderPinMaskValues();
+      const activeEmployee = document.getElementById('employee-dropdown').value;
+      if(!activeEmployee) return alert("Select an active employee profile option from the list first.");
+      
+      // If attempting to Check In, scan database rows for today's matches first
+      if (mode === 'Check In') {
+        callBackendAPI("getAttendance", {}, rows => {
+          const todayStr = getSriLankaDateString();
+          
+          const alreadyCheckedIn = rows.some(r => 
+            r.name && r.name.toLowerCase().trim() === activeEmployee.toLowerCase().trim() &&
+            r.date === todayStr && 
+            r.timein && r.timein.trim() !== ""
+          );
+          
+          if (alreadyCheckedIn) {
+            alert("you already checkin for today");
+          } else {
+            proceedToNumpad(mode);
+          }
+        });
+      } else {
+        proceedToNumpad(mode);
+      }
+    }
+
+    function proceedToNumpad(mode) {
+      designatedMode = mode; 
+      currentPinString = ""; 
+      renderPinMaskValues();
       document.getElementById('numpad-modal').style.display = 'flex';
     }
 
@@ -472,7 +505,9 @@
       if(currentPinString.length >= 6) return; 
       currentPinString += digitValue; renderPinMaskValues();
     }
+    
     function wipePad() { currentPinString = ""; renderPinMaskValues(); }
+    
     function renderPinMaskValues() {
       let totalLength = currentPinString.length;
       document.getElementById('pin-display').innerText = "*".repeat(totalLength) + "-".repeat(6 - totalLength);
@@ -490,6 +525,7 @@
         }
       });
     }
+    
     function dismissNumpadWindow() { document.getElementById('numpad-modal').style.display = 'none'; }
 
     function executeManualDataSearch() {
