@@ -87,6 +87,12 @@
       
       <div class="filter-group">
         <div>
+          <label>Name:</label>
+          <select id="search-name-dropdown" style="width: 200px;">
+            <option value="all">Show All Employees</option>
+          </select>
+        </div>
+        <div>
           <label>Choose Month:</label>
           <input type="month" id="month-picker" value="2026-07">
         </div>
@@ -102,7 +108,7 @@
         </div>
         
         <button onclick="executeManualDataSearch()" style="padding: 10px 20px; background: #008CBA; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px;">Submit</button>
-        <button onclick="downloadWholeMonth()" class="download-btn" style="margin-left: auto;">Download Whole Month CSV</button>
+        <button onclick="downloadWholeMonth()" class="download-btn" style="margin-left: auto;">Download CSV</button>
       </div>
 
       <div id="table-container">
@@ -163,7 +169,7 @@
 
   <script>
     // 🔗 PASTE YOUR GOOGLE WEB APP URL LINK INSIDE THE QUOTES BELOW:
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzhg4Th17xVu-gxTYZf2T8fZngWoh3U2t9jkLpAI-JUGu1Xhx0aXx5ozUrgY96rZqow/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzcHfCDDCmiuiAmk6NqvdWQRMGoNegc-1IMtSHHcMIzpoem3V5Kkb25AhHiaUez8D6W/exec";
 
     let currentPinString = "";
     let designatedMode = "Check In";
@@ -205,8 +211,6 @@
 
       callBackendAPI("verifyLogin", { user: user, pass: pass }, authSession => {
         if(authSession && authSession.isValid) {
-          
-          // Success Popout Message
           alert("Login success\nPlease wait...");
 
           loggedInUser = authSession.username;
@@ -225,7 +229,6 @@
           showMenu('menu2', document.getElementById('nav-inp'));
           refreshLocalDropdownSync();
         } else {
-          // Failure Popout Message detailing the specific reason
           const messageReason = authSession ? authSession.reason : "Server pipeline unreachable";
           alert("Login failed\n(" + messageReason + ")");
         }
@@ -243,12 +246,22 @@
     function refreshLocalDropdownSync() {
       callBackendAPI("getEmployees", {}, employeeArray => {
         const dropdown = document.getElementById('employee-dropdown');
+        const searchDropdown = document.getElementById('search-name-dropdown');
+        
         dropdown.innerHTML = '<option value="">-- Select Employee --</option>';
+        searchDropdown.innerHTML = '<option value="all">Show All Employees</option>';
+        
         if(employeeArray && employeeArray.length) {
           employeeArray.forEach(name => {
-            let opt = document.createElement('option');
-            opt.value = name; opt.innerText = name;
-            dropdown.appendChild(opt);
+            // Fill Input Dropdown
+            let opt1 = document.createElement('option');
+            opt1.value = name; opt1.innerText = name;
+            dropdown.appendChild(opt1);
+            
+            // Fill Show Data Dropdown Filter
+            let opt2 = document.createElement('option');
+            opt2.value = name; opt2.innerText = name;
+            searchDropdown.appendChild(opt2);
           });
         }
       });
@@ -336,6 +349,7 @@
     }
 
     function executeManualDataSearch() {
+      const nameFilter = document.getElementById('search-name-dropdown').value;
       const combinedMonthFilter = document.getElementById('month-picker').value;
       const groupFilter = document.getElementById('week-selector').value;
       const layoutContainer = document.getElementById('table-container');
@@ -347,8 +361,15 @@
       callBackendAPI("getAttendance", {}, rows => {
         storedSessionData = rows; 
         
+        // 1. Filter by Month Prefix
         let subFiltered = rows.filter(r => r.Date && r.Date.startsWith(combinedMonthFilter));
 
+        // 2. Filter by Name Dropdown Selection
+        if (nameFilter !== "all") {
+          subFiltered = subFiltered.filter(r => r.Name && r.Name.toLowerCase().trim() === nameFilter.toLowerCase().trim());
+        }
+
+        // 3. Filter by Week Groupings
         subFiltered = subFiltered.filter(r => {
           const extractedDayInteger = parseInt(r.Date.split("-")[2], 10);
           if (groupFilter === 'w1') return extractedDayInteger >= 1 && extractedDayInteger <= 7;
@@ -359,7 +380,7 @@
         });
 
         if(subFiltered.length === 0) {
-          layoutContainer.innerHTML = "<p style='color:#ff9800;'>No confirmed logs matches this criteria context scope.</p>";
+          layoutContainer.innerHTML = "<p style='color:#ff9800;'>No confirmed log matches this criteria context scope.</p>";
           return;
         }
 
@@ -378,13 +399,19 @@
     }
 
     function downloadWholeMonth() {
+      const nameFilter = document.getElementById('search-name-dropdown').value;
       const targetedMonthPrefix = document.getElementById('month-picker').value;
 
       if(!storedSessionData || storedSessionData.length === 0) {
         return alert("Please run a successful 'Submit' query first to initialize the file packaging cache.");
       }
 
-      const exactMonthRows = storedSessionData.filter(r => r.Date && r.Date.startsWith(targetedMonthPrefix));
+      let exactMonthRows = storedSessionData.filter(r => r.Date && r.Date.startsWith(targetedMonthPrefix));
+      
+      if (nameFilter !== "all") {
+        exactMonthRows = exactMonthRows.filter(r => r.Name && r.Name.toLowerCase().trim() === nameFilter.toLowerCase().trim());
+      }
+
       if(exactMonthRows.length === 0) return alert("The selected timeframe contains an empty sheet row layout.");
 
       let textCsvPayload = "Name,Date,Time In,Time Out\n";
