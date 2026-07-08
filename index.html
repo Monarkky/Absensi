@@ -189,7 +189,7 @@
 
   <script>
     // 🔗 PASTE YOUR GOOGLE WEB APP URL LINK INSIDE THE QUOTES BELOW:
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzNZcQsIJ43fzEeczwBAcWZA5nCDP4i4-0cbtOshTk8kid6zpx_iN-_MVGrZjeuiSsA/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx49uGamOvVKzFhGyTfSR6evbceWsljcDd3q4BLCVCCAiffvJwzvfhRMP6za3A8HnQs/exec";
 
     let currentPinString = "";
     let designatedMode = "Check In";
@@ -217,19 +217,38 @@
       });
     };
 
+    // UPGRADED FAIL-SAFE ANTI AD-BLOCKER ENGINES
     function fetchClientIpAddress(callback) {
+      // Engine 1: Ipify (Primary)
       fetch("https://api.ipify.org?format=json")
         .then(res => res.json())
-        .then(data => {
-          userPublicIp = data.ip;
-          document.getElementById('detected-ip-string').innerText = userPublicIp;
-          document.getElementById('ip-target-input').value = userPublicIp;
-          if(callback) callback();
-        })
-        .catch(err => {
-          alert("Network Routing Interruption: Failed to query client source IP.");
-          document.getElementById('detected-ip-string').innerText = "Unknown/Error";
+        .then(data => handleIpSuccess(data.ip, callback))
+        .catch(() => {
+          // Engine 2: Icanhazip (Backup 1 if primary is blocked by Ad-Blockers)
+          fetch("https://ipv4.icanhazip.com")
+            .then(res => res.text())
+            .then(ip => handleIpSuccess(ip.trim(), callback))
+            .catch(() => {
+              // Engine 3: Ipapi (Backup 2)
+              fetch("https://ipapi.co/json/")
+                .then(res => res.json())
+                .then(data => handleIpSuccess(data.ip, callback))
+                .catch(err => {
+                  alert("Network Guard Alert: Please disable your browser's Ad-Blocker/Brave Shields for this tracking domain and refresh.");
+                  document.getElementById('detected-ip-string').innerText = "Unknown/Blocked";
+                  if(callback) callback();
+                });
+            });
         });
+    }
+
+    function handleIpSuccess(ip, callback) {
+      userPublicIp = ip;
+      const displayEl = document.getElementById('detected-ip-string');
+      const inputEl = document.getElementById('ip-target-input');
+      if(displayEl) displayEl.innerText = userPublicIp;
+      if(inputEl) inputEl.value = userPublicIp;
+      if(callback) callback();
     }
 
     function setupActivityListeners() {
@@ -385,7 +404,6 @@
       });
     }
 
-    // THE DELETION HANDLER: Asks for confirmation using your exact phrasing
     function revokeIpRegistration(ipAddress) {
       if(!confirm("Are you sure delete this ip?")) return; 
       
