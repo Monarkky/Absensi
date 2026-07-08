@@ -41,12 +41,14 @@
     .download-btn { padding: 10px 15px; background: #4CAF50; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; }
     .download-btn:hover { background: #45a049; }
     
-    .admin-form-group { display: flex; flex-direction: column; gap: 15px; max-width: 350px; margin-top: 20px; }
+    .admin-split-layout { display: flex; gap: 40px; flex-wrap: wrap; margin-top: 20px; }
+    .admin-form-group { display: flex; flex-direction: column; gap: 15px; width: 350px; }
+    .ip-management-panel { flex: 1; min-width: 350px; background: #161616; padding: 20px; border-radius: 6px; border: 1px solid #333; }
   </style>
 </head>
 <body>
 
-  <div id="login-screen">
+  <div id="login-screen" style="display: none;">
     <h2 style="color: #008CBA; margin-bottom: 25px;">Attendance System Login</h2>
     <input type="text" id="login-user" class="login-field" placeholder="Admin Username">
     <input type="password" id="login-pass" class="login-field" placeholder="Admin Password">
@@ -58,7 +60,7 @@
       <button id="nav-reg" onclick="showMenu('menu1', this)">Register Data</button>
       <button id="nav-inp" onclick="showMenu('menu2', this)">Input Data</button>
       <button id="nav-see" onclick="showMenu('menu3', this)">Show Data</button>
-      <button id="nav-admin" onclick="showMenu('menu4', this)" style="display: none; border-color: #7b1fa2; color: #e1bee7;">Create Admin ID</button>
+      <button id="nav-admin" onclick="showMenu('menu4', this)" style="display: none; border-color: #7b1fa2; color: #e1bee7;">Master Settings</button>
       <button id="nav-logout" onclick="executeLogoutAction()">Logout</button>
     </div>
 
@@ -118,28 +120,47 @@
     </div>
 
     <div id="menu4" class="menu">
-      <h2 style="color: #aa66cc;">Create System Access Admin ID</h2>
-      <div class="admin-form-group">
-        <div>
-          <label style="display:block; margin-bottom:5px;">New Username:</label>
-          <input type="text" id="new-admin-user" placeholder="Enter Username" style="width:100%;">
+      <h2 style="color: #aa66cc;">Master Control Panel</h2>
+      
+      <div class="admin-split-layout">
+        <div class="admin-form-group">
+          <h3 style="color:#e1bee7; margin-top:0;">Create Admin ID</h3>
+          <div>
+            <label style="display:block; margin-bottom:5px;">New Username:</label>
+            <input type="text" id="new-admin-user" placeholder="Enter Username" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; margin-bottom:5px;">Account Password:</label>
+            <input type="password" id="new-admin-pass" placeholder="Enter Password" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block; margin-bottom:5px;">Assigned Access Role Level:</label>
+            <select id="new-admin-role" style="width:100%;">
+              <option value="Admin">Standard System Admin</option>
+              <option value="Master">Master Authority ID</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; margin-bottom:5px;">Optional Attendance PIN:</label>
+            <input type="text" id="new-admin-pin" placeholder="Blank, or 4-6 numeric digits" style="width:100%;" maxlength="6">
+          </div>
+          <button onclick="submitNewAdminIdAccount()" style="padding: 12px; background: #7b1fa2; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; font-size:15px;">Provision Account ID</button>
         </div>
-        <div>
-          <label style="display:block; margin-bottom:5px;">Account Password:</label>
-          <input type="password" id="new-admin-pass" placeholder="Enter Password" style="width:100%;">
+
+        <div class="ip-management-panel">
+          <h3 style="color:#4fc3f7; margin-top:0;">Firewall Whitelist IP Registry</h3>
+          <p style="font-size:14px; color:#aaa;">Your Detected Public IP Address: <b style="color:#fff;" id="detected-ip-string">Querying...</b></p>
+          
+          <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <input type="text" id="ip-target-input" placeholder="e.g. 192.168.1.1" style="flex:1;">
+            <button onclick="submitNewIpAuthorization()" style="background:#008CBA; color:#fff; border:none; padding:10px 15px; font-weight:bold; border-radius:4px; cursor:pointer;">Authorize IP</button>
+          </div>
+
+          <h4 style="margin:15px 0 5px 0; color:#aaa; font-size:14px;">Currently Whitelisted Networks:</h4>
+          <div id="ip-table-wrapper" style="max-height:220px; overflow-y:auto; border:1px solid #333; background:#121212;">
+            <p style="padding:10px; color:#666; margin:0; font-size:13px;">No IP configurations retrieved.</p>
+          </div>
         </div>
-        <div>
-          <label style="display:block; margin-bottom:5px;">Assigned Access Role Level:</label>
-          <select id="new-admin-role" style="width:100%;">
-            <option value="Admin">Standard System Admin</option>
-            <option value="Master">Master Authority ID</option>
-          </select>
-        </div>
-        <div>
-          <label style="display:block; margin-bottom:5px;">Optional Attendance PIN:</label>
-          <input type="text" id="new-admin-pin" placeholder="Blank, or 4-6 numeric digits" style="width:100%;" maxlength="6">
-        </div>
-        <button onclick="submitNewAdminIdAccount()" style="padding: 12px; background: #aa66cc; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; margin-top: 10px; font-size:15px;">Provision Account ID</button>
       </div>
     </div>
   </div>
@@ -168,7 +189,7 @@
 
   <script>
     // 🔗 PASTE YOUR GOOGLE WEB APP URL LINK INSIDE THE QUOTES BELOW:
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwK64qcmV6sh9qOBFxhNvTZ_CHWbqWqKtnia3BtzD2LYPkTlQRG1uwOlkeXNkFKZBJs/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzNZcQsIJ43fzEeczwBAcWZA5nCDP4i4-0cbtOshTk8kid6zpx_iN-_MVGrZjeuiSsA/exec";
 
     let currentPinString = "";
     let designatedMode = "Check In";
@@ -176,25 +197,41 @@
     let loggedInUser = "";
     let loggedInRole = "";
     let idleCountdownTimer = null;
+    let userPublicIp = "";
 
-    // FIX: Checks localStorage on bootup to maintain login state after browser refreshes
     window.onload = function() {
       setupActivityListeners();
-      const preservedToken = localStorage.getItem("attendance_matrix_token");
-      
-      if(preservedToken) {
-        try {
-          const parsingObject = JSON.parse(preservedToken);
-          initializeDashboardSession(parsingObject);
-        } catch(e) {
-          clearLocalStorageToken();
+      fetchClientIpAddress(() => {
+        const preservedToken = localStorage.getItem("attendance_matrix_token");
+        if(preservedToken) {
+          try {
+            const parsingObject = JSON.parse(preservedToken);
+            initializeDashboardSession(parsingObject);
+          } catch(e) {
+            clearLocalStorageToken();
+            document.getElementById('login-screen').style.display = 'block';
+          }
+        } else {
+          document.getElementById('login-screen').style.display = 'block';
         }
-      } else {
-        document.getElementById('login-screen').style.display = 'block';
-      }
+      });
     };
 
-    // FIX: Inactivity tracker resets whenever a user interacts with the application
+    function fetchClientIpAddress(callback) {
+      fetch("https://api.ipify.org?format=json")
+        .then(res => res.json())
+        .then(data => {
+          userPublicIp = data.ip;
+          document.getElementById('detected-ip-string').innerText = userPublicIp;
+          document.getElementById('ip-target-input').value = userPublicIp;
+          if(callback) callback();
+        })
+        .catch(err => {
+          alert("Network Routing Interruption: Failed to query client source IP.");
+          document.getElementById('detected-ip-string').innerText = "Unknown/Error";
+        });
+    }
+
     function setupActivityListeners() {
       const globalResetEvents = ['mousemove', 'mousedown', 'keypress', 'touchstart', 'scroll', 'click'];
       globalResetEvents.forEach(eventName => {
@@ -204,10 +241,8 @@
 
     function resetInactivityWatchdog() {
       if(idleCountdownTimer) clearTimeout(idleCountdownTimer);
-      
-      // Only keep timing alive if an admin profile is logged in
       if(loggedInUser !== "") {
-        idleCountdownTimer = setTimeout(triggerInactivityAutoLogout, 900000); // 900,000ms = 15 Minutes
+        idleCountdownTimer = setTimeout(triggerInactivityAutoLogout, 900000); // 15 Minutes
       }
     }
 
@@ -219,23 +254,19 @@
     function executeLogoutAction() {
       clearLocalStorageToken();
       if(idleCountdownTimer) clearTimeout(idleCountdownTimer);
-      
-      loggedInUser = "";
-      loggedInRole = "";
-      
+      loggedInUser = ""; loggedInRole = "";
       document.getElementById('app-shell').style.display = 'none';
       document.getElementById('main-navigation').style.display = 'none';
-      
       document.getElementById('login-user').value = "";
       document.getElementById('login-pass').value = "";
       document.getElementById('login-screen').style.display = 'block';
     }
 
-    function clearLocalStorageToken() {
-      localStorage.removeItem("attendance_matrix_token");
-    }
+    function clearLocalStorageToken() { localStorage.removeItem("attendance_matrix_token"); }
 
     function callBackendAPI(actionName, payloadData, successCallback) {
+      payloadData.clientIp = userPublicIp;
+
       fetch(WEB_APP_URL, {
         method: "POST",
         body: JSON.stringify({ action: actionName, data: payloadData })
@@ -243,7 +274,10 @@
       .then(res => res.json())
       .then(jsonResponse => {
         if(jsonResponse && jsonResponse.error) {
-          alert("Server Error Encountered: " + jsonResponse.error);
+          alert(jsonResponse.error);
+          if (jsonResponse.error.includes("Access Denied")) {
+            executeLogoutAction();
+          }
         } else if (successCallback) {
           successCallback(jsonResponse);
         }
@@ -253,7 +287,7 @@
         if(layoutContainer && actionName === "getAttendance") {
           layoutContainer.innerHTML = "<p style='color:#f44336;'>Error connecting to server database pipeline.</p>";
         } else {
-          alert("Network Connection Failure. Ensure Web App is Deployed as 'Anyone'.");
+          alert("Network Connection Failure. Verify status deployments.");
         }
       });
     }
@@ -276,7 +310,6 @@
             }
             callBackendAPI("setupAdminPin", { user: authSession.username, pin: collectedPin }, () => {
               alert("PIN security registry complete!");
-              // Cache login configuration properties locally
               localStorage.setItem("attendance_matrix_token", JSON.stringify(authSession));
               initializeDashboardSession(authSession);
             });
@@ -302,7 +335,7 @@
       
       showMenu('menu2', document.getElementById('nav-inp'));
       refreshLocalDropdownSync();
-      resetInactivityWatchdog(); // Commences the timer thread
+      resetInactivityWatchdog();
     }
 
     function showMenu(menuId, element) {
@@ -310,6 +343,56 @@
       document.querySelectorAll('.nav-bar button').forEach(b => b.classList.remove('active-tab'));
       document.getElementById(menuId).classList.add('active');
       if(element) element.classList.add('active-tab');
+      
+      if (menuId === 'menu4' && loggedInRole === "Master") {
+        updateIpWhitelistDisplayGrid();
+      }
+    }
+
+    function submitNewIpAuthorization() {
+      const ipAddress = document.getElementById('ip-target-input').value.trim();
+      if(!ipAddress) return alert("Enter a valid IP structure.");
+      
+      callBackendAPI("registerIp", { activeUser: loggedInUser, ipToWhitelist: ipAddress }, feedback => {
+        alert(feedback);
+        if(!feedback.includes("Error")) {
+          document.getElementById('ip-target-input').value = userPublicIp;
+          updateIpWhitelistDisplayGrid();
+        }
+      });
+    }
+
+    function updateIpWhitelistDisplayGrid() {
+      const container = document.getElementById('ip-table-wrapper');
+      container.innerHTML = "<p style='padding:10px; color:#008CBA;'>Querying Firewall records...</p>";
+      
+      callBackendAPI("getIps", {}, list => {
+        if(!list || list.length === 0) {
+          container.innerHTML = "<p style='padding:10px; color:#666; margin:0;'>No IP arrays registered.</p>";
+          return;
+        }
+        let htmlBlock = `<table style='margin-top:0; font-size:13px;'><tr><th>IP Address</th><th>Authorized By</th><th>Date Added</th><th>Action</th></tr>`;
+        list.forEach(item => {
+          htmlBlock += `<tr>
+            <td><b>${item.ip}</b></td>
+            <td>${item.addedBy}</td>
+            <td>${item.date}</td>
+            <td><button onclick="revokeIpRegistration('${item.ip}')" style='background:#b71c1c; color:#fff; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-weight:bold;'>Delete</button></td>
+          </tr>`;
+        });
+        htmlBlock += `</table>`;
+        container.innerHTML = htmlBlock;
+      });
+    }
+
+    // THE DELETION HANDLER: Asks for confirmation using your exact phrasing
+    function revokeIpRegistration(ipAddress) {
+      if(!confirm("Are you sure delete this ip?")) return; 
+      
+      callBackendAPI("removeIp", { activeUser: loggedInUser, ipToRemove: ipAddress }, result => {
+        alert(result);
+        updateIpWhitelistDisplayGrid();
+      });
     }
 
     function refreshLocalDropdownSync() {
