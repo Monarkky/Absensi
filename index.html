@@ -217,19 +217,15 @@
       });
     };
 
-    // UPGRADED FAIL-SAFE ANTI AD-BLOCKER ENGINES
     function fetchClientIpAddress(callback) {
-      // Engine 1: Ipify (Primary)
       fetch("https://api.ipify.org?format=json")
         .then(res => res.json())
         .then(data => handleIpSuccess(data.ip, callback))
         .catch(() => {
-          // Engine 2: Icanhazip (Backup 1 if primary is blocked by Ad-Blockers)
           fetch("https://ipv4.icanhazip.com")
             .then(res => res.text())
             .then(ip => handleIpSuccess(ip.trim(), callback))
             .catch(() => {
-              // Engine 3: Ipapi (Backup 2)
               fetch("https://ipapi.co/json/")
                 .then(res => res.json())
                 .then(data => handleIpSuccess(data.ip, callback))
@@ -462,7 +458,6 @@
       });
     }
 
-    // Helper function to get today's exact date in Sri Lanka timezone matching database format
     function getSriLankaDateString() {
       const options = { timeZone: "Asia/Colombo", year: "numeric", month: "2-digit", day: "2-digit" };
       return new Intl.DateTimeFormat("en-CA", options).format(new Date());
@@ -472,26 +467,36 @@
       const activeEmployee = document.getElementById('employee-dropdown').value;
       if(!activeEmployee) return alert("Select an active employee profile option from the list first.");
       
-      // If attempting to Check In, scan database rows for today's matches first
-      if (mode === 'Check In') {
-        callBackendAPI("getAttendance", {}, rows => {
-          const todayStr = getSriLankaDateString();
-          
+      // Query database records to scan for duplicate daily entries
+      callBackendAPI("getAttendance", {}, rows => {
+        const todayStr = getSriLankaDateString();
+        const employeeNameClean = activeEmployee.toLowerCase().trim();
+        
+        if (mode === 'Check In') {
           const alreadyCheckedIn = rows.some(r => 
-            r.name && r.name.toLowerCase().trim() === activeEmployee.toLowerCase().trim() &&
+            r.name && r.name.toLowerCase().trim() === employeeNameClean &&
             r.date === todayStr && 
             r.timein && r.timein.trim() !== ""
           );
           
           if (alreadyCheckedIn) {
-            alert("you already checkin for today");
-          } else {
-            proceedToNumpad(mode);
+            return alert("you already checkin for today");
           }
-        });
-      } else {
+        } else if (mode === 'Check Out') {
+          const alreadyCheckedOut = rows.some(r => 
+            r.name && r.name.toLowerCase().trim() === employeeNameClean &&
+            r.date === todayStr && 
+            r.timeout && r.timeout.trim() !== ""
+          );
+          
+          if (alreadyCheckedOut) {
+            return alert("you already checkout for today");
+          }
+        }
+        
+        // If checks pass successfully, open pin numpad
         proceedToNumpad(mode);
-      }
+      });
     }
 
     function proceedToNumpad(mode) {
