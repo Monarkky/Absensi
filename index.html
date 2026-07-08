@@ -87,31 +87,11 @@
       
       <div class="filter-group">
         <div>
-          <label>Year:</label>
-          <select id="year-selector">
-            <option value="2026">2026</option>
-            <option value="2027">2027</option>
-          </select>
+          <label>Choose Month:</label>
+          <input type="month" id="month-picker" value="2026-07">
         </div>
         <div>
-          <label>Month:</label>
-          <select id="month-selector">
-            <option value="01">January</option>
-            <option value="02">February</option>
-            <option value="03">March</option>
-            <option value="04">April</option>
-            <option value="05">May</option>
-            <option value="06">June</option>
-            <option value="07">July</option>
-            <option value="08">August</option>
-            <option value="09">September</option>
-            <option value="10">October</option>
-            <option value="11">November</option>
-            <option value="12">December</option>
-          </select>
-        </div>
-        <div>
-          <label>Group/Week:</label>
+          <label>Filter by Group/Week:</label>
           <select id="week-selector">
             <option value="all">Show All Month Rows</option>
             <option value="w1">Group 1 (Dates 1 - 7)</option>
@@ -150,6 +130,10 @@
             <option value="Master">Master Authority ID</option>
           </select>
         </div>
+        <div>
+          <label style="display:block; margin-bottom:5px;">Assigned Attendance PIN (4-6 Digits):</label>
+          <input type="text" id="new-admin-pin" placeholder="Enter numeric PIN (e.g. 5566)" style="width:100%;" maxlength="6">
+        </div>
         <button onclick="submitNewAdminIdAccount()" style="padding: 12px; background: #aa66cc; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; margin-top: 10px; font-size:15px;">Provision Account ID</button>
       </div>
     </div>
@@ -179,7 +163,7 @@
 
   <script>
     // 🔗 PASTE YOUR GOOGLE WEB APP URL LINK INSIDE THE QUOTES BELOW:
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwh0Ddta6RA7QlNDx55VkhBdZD3xQtid33kCcWcpIKliq5ughX0XYc0pNY-EmHGDd41/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzhg4Th17xVu-gxTYZf2T8fZngWoh3U2t9jkLpAI-JUGu1Xhx0aXx5ozUrgY96rZqow/exec";
 
     let currentPinString = "";
     let designatedMode = "Check In";
@@ -191,7 +175,6 @@
       document.getElementById('login-screen').style.display = 'block';
     };
 
-    // Global central function to securely push requests outward to Google Sheets API
     function callBackendAPI(actionName, payloadData, successCallback) {
       fetch(WEB_APP_URL, {
         method: "POST",
@@ -205,7 +188,14 @@
           successCallback(jsonResponse);
         }
       })
-      .catch(err => alert("Network Connection Failure. Ensure Web App is Deployed as 'Anyone'."));
+      .catch(err => {
+        const layoutContainer = document.getElementById('table-container');
+        if(layoutContainer && actionName === "getAttendance") {
+          layoutContainer.innerHTML = "<p style='color:#f44336;'>Error connecting to server database pipeline.</p>";
+        } else {
+          alert("Network Connection Failure. Ensure Web App is Deployed as 'Anyone'.");
+        }
+      });
     }
 
     function executeLoginVerify() {
@@ -215,6 +205,10 @@
 
       callBackendAPI("verifyLogin", { user: user, pass: pass }, authSession => {
         if(authSession && authSession.isValid) {
+          
+          // Success Popout Message
+          alert("Login success\nPlease wait...");
+
           loggedInUser = authSession.username;
           loggedInRole = authSession.role;
 
@@ -231,7 +225,9 @@
           showMenu('menu2', document.getElementById('nav-inp'));
           refreshLocalDropdownSync();
         } else {
-          alert("Access Denied: Invalid credentials.");
+          // Failure Popout Message detailing the specific reason
+          const messageReason = authSession ? authSession.reason : "Server pipeline unreachable";
+          alert("Login failed\n(" + messageReason + ")");
         }
       });
     }
@@ -274,14 +270,23 @@
       const newUsername = document.getElementById('new-admin-user').value.trim();
       const newPassword = document.getElementById('new-admin-pass').value.trim();
       const newRole = document.getElementById('new-admin-role').value;
+      const newPin = document.getElementById('new-admin-pin').value.trim();
 
-      if(!newUsername || !newPassword) return alert("Username and Password entries cannot be left blank.");
+      if(!newUsername || !newPassword || !newPin) return alert("Username, Password, and PIN fields cannot be left blank.");
+      if(isNaN(newPin) || newPin.length < 4 || newPin.length > 6) return alert("PIN must be a numeric value between 4 and 6 digits long.");
 
-      callBackendAPI("registerAdmin", { activeUser: loggedInUser, newRes: newUsername, newPass: newPassword, newRole: newRole }, serverResultFeedback => {
+      callBackendAPI("registerAdmin", { 
+        activeUser: loggedInUser, 
+        newRes: newUsername, 
+        newPass: newPassword, 
+        newRole: newRole,
+        newPin: newPin 
+      }, serverResultFeedback => {
         alert(serverResultFeedback);
         if(serverResultFeedback.indexOf("Success") === 0) {
           document.getElementById('new-admin-user').value = "";
           document.getElementById('new-admin-pass').value = "";
+          document.getElementById('new-admin-pin').value = "";
         }
       });
     }
@@ -331,11 +336,11 @@
     }
 
     function executeManualDataSearch() {
-      const yr = document.getElementById('year-selector').value;
-      const mo = document.getElementById('month-selector').value;
-      const combinedMonthFilter = `${yr}-${mo}`;
+      const combinedMonthFilter = document.getElementById('month-picker').value;
       const groupFilter = document.getElementById('week-selector').value;
       const layoutContainer = document.getElementById('table-container');
+
+      if(!combinedMonthFilter) return alert("Please select a valid month target filter context.");
 
       layoutContainer.innerHTML = "<p style='color:#008CBA;'>Querying internal storage structures securely...</p>";
 
@@ -373,9 +378,7 @@
     }
 
     function downloadWholeMonth() {
-      const yr = document.getElementById('year-selector').value;
-      const mo = document.getElementById('month-selector').value;
-      const targetedMonthPrefix = `${yr}-${mo}`;
+      const targetedMonthPrefix = document.getElementById('month-picker').value;
 
       if(!storedSessionData || storedSessionData.length === 0) {
         return alert("Please run a successful 'Submit' query first to initialize the file packaging cache.");
